@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 from tkinter import *
-from brain import process_content, save_chapter
+from brain import *
 
 
 class App(tk.Tk):
@@ -31,38 +31,85 @@ class Head(ttk.Frame):
     def create_widgets(self):
         heading = ttk.Label(self, text='QUIZZIKA', font=("Cinzel", 30), foreground='black')
         heading.place(relx=0.02, rely=0.2)
-        score = ttk.Label(self, text='9/10', font=("Cinzel", 30), foreground='black')
-        score.place(relx=0.9, rely=0.2)
 
 
 class Menu(ttk.Frame):
     def __init__(self, parent):
         super().__init__(parent)
-        ttk.Label(self, background='red').pack(expand=True, fill='both')
+        self.config(relief="ridge")
         self.place(x=0, rely=0.15, relwidth=0.25, relheight=0.85)
+
+        options = load_chapters()
+        options.insert(0, "Select Chapter")
+
+        clicked = StringVar()
+        self.chapters = ttk.OptionMenu(self, clicked, *options)
+        self.chapters.grid(row=0, column=0, padx=(50, 0), pady=10)
+        self.load_quiz = ttk.Button(self, text="Load quiz", command=lambda: fetch_chapter_questions(clicked))
+        self.load_quiz.grid(row=1, column=0, padx=(50, 0), pady=10)
 
 
 class Question(ttk.Frame):
     def __init__(self, parent):
         super().__init__(parent)
-        self.place(relx=0.25, rely=0.15, relwidth=0.75, relheight=0.60)
-        self.create_question_widgets()
+        self.config(relief="ridge")
+        self.place(relx=0.25, rely=0.15, relwidth=0.75, relheight=0.60,)
 
-    def create_question_widgets(self):
-        c1 = tk.BooleanVar()
-        c2 = tk.BooleanVar()
-        c3 = tk.BooleanVar()
-        c4 = tk.BooleanVar()
-        question_label = ttk.Label(self, text="Question:", font=('Calibri', 30))
-        question_label.grid(row=0, column=0, padx=80, pady=80)
-        choice_1 = ttk.Checkbutton(self, text="choice 1", variable=c1)
-        choice_2 = ttk.Checkbutton(self, text="choice 2", variable=c2)
-        choice_3 = ttk.Checkbutton(self, text="choice 3", variable=c3)
-        choice_4 = ttk.Checkbutton(self, text="choice 4", variable=c4)
-        choice_1.grid(row=1, column=0)
-        choice_2.grid(row=1, column=1)
-        choice_3.grid(row=2, column=0)
-        choice_4.grid(row=2, column=1)
+        self.score = 0
+        self.total = 0
+
+        def update_score():
+            self.score_card.config(text=f'{self.score}/{self.total}')
+
+        def update_question():
+            if len(current_question) != 0:
+                self.question_label.config(text=current_question[0])
+                self.total += 1
+                update_score()
+
+        def update_answer():
+            self.answer_label.config(text=current_question_answer[0])
+
+        def next_q_a():
+            next_question()
+            self.question_label.config(text=current_question[0])
+            self.answer_label.config(text="")
+            self.score += 1
+            self.total += 1
+            update_score()
+
+        def mark_wrong():
+            self.score -= 1
+
+        def finish():
+            self.score += 1
+            self.question_label.config(text=f'Congrats! You have scored {self.score} out of {self.total}')
+            self.answer_label.config(text='')
+            update_score()
+
+        def reset_score():
+            self.score = 0
+            self.total = 0
+            update_score()
+
+        self.score_card = ttk.Label(self, text=f'{self.score}/{self.total}', font=("Cinzel", 30), foreground='black')
+        self.score_card.place(relx=0.9, rely=0.05)
+        self.start_quiz = ttk.Button(self, text="Start Quiz", command=update_question)
+        self.start_quiz.grid(row=0, column=0, pady=(50, 0))
+        self.question_label = ttk.Label(self, text="", font=('Calibri', 30))
+        self.question_label.grid(row=1, column=0, padx=80, pady=80, columnspan=4, sticky="w")
+        self.answer_label = ttk.Label(self, text="", font=('calibri', 30), foreground='Green')
+        self.answer_label.grid(row=2, column=0)
+        self.answer_button = ttk.Button(self, text="Answer", command=update_answer)
+        self.answer_button.grid(row=3, column=0, padx=80, pady=50)
+        self.next = ttk.Button(self, text="Next", command=next_q_a)
+        self.next.grid(row=3, column=1)
+        self.mark_wrong = ttk.Button(self, text="Mark Wrong", command=mark_wrong)
+        self.mark_wrong.grid(row=3, column=2, padx=80, pady=50)
+        self.finish = ttk.Button(self, text="Finish", command=finish)
+        self.finish.grid(row=3, column=3)
+        self.reset_score = ttk.Button(self, text="Reset Score", command=reset_score)
+        self.reset_score.grid(row=4, column=0)
 
 
 class Setting(ttk.Frame):
@@ -91,4 +138,3 @@ class Setting(ttk.Frame):
         self.add.grid(row=3, column=0, columnspan=4, sticky="w", padx=(30, 0), pady=10)
 
 
-App('QUIZZIKA', (1800, 1000))

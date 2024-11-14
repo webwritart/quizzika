@@ -8,3 +8,4 @@ cur.execute("CREATE TABLE IF NOT EXISTS questions(category, chapter, question, a
 con.commit()
 con.close()
 
+App('QUIZZIKA', (1800, 1000))
