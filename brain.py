@@ -3,7 +3,7 @@ import sqlite3
 
 data = []
 
-# --------------------------------- DATABASE OPERATIONS --------------------------------------- #
+# --------------------------------- DATABASE OPERATIONS ----------------------------------------- #
 
 
 def add_data_to_db_table(cur, category, title, question, answer):
@@ -14,15 +14,46 @@ def add_data_to_db_table(cur, category, title, question, answer):
     cur.execute(sqlite_insert_with_param, data_tuple)
 
 
-def delete_table():
-    con = sqlite3.connect("data.db")
-    cur = con.cursor()
-    cur.execute("DELETE TABLE questions;")
-    con.commit()
-    con.close()
+# def delete_table():
+#     con = sqlite3.connect("data.db")
+#     cur = con.cursor()
+#     cur.execute("DELETE TABLE questions;")
+#     con.commit()
+#     con.close()
 
 
-# -------------------------------- APP OPERATIONS -------------------------------------------- #
+# --------------------------------------- QUIZ -------------------------------------------------- #
+
+
+def load_chapters():
+    pass
+
+
+def select_chapter():
+    pass
+
+
+def start_quiz():
+    pass
+
+
+def show_answer():
+    pass
+
+
+def mark_wrong():
+    pass
+
+
+def next_question():
+    pass
+
+
+def score_counter():
+    pass
+
+
+# ------------------------------------ ADD CHAPTER ---------------------------------------------- #
 
 
 def process_content():
@@ -55,4 +86,4 @@ def save_chapter(category, title):
     con.close()
 
 
-delete_table()
+# delete_table()
