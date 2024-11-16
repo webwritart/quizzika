@@ -1,6 +1,6 @@
 import sqlite3
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
 from tkinter import *
 from brain import *
 import sys
@@ -83,37 +83,46 @@ class Question(ttk.Frame):
         def enable_finish_button():
             self.finish.config(state=tk.NORMAL)
 
+        def enable_start_quiz_button():
+            self.start_quiz.config(state=tk.NORMAL)
+
+        def disable_start_question_button():
+            self.start_quiz.config(state=tk.DISABLED)
+
         def update_score():
             self.score_card.config(text=f'{self.score}/{self.total}')
 
         def start_quiz():
-            self.answer_label.config(text="")
-            enable_finish_button()
-            remaining_questions.clear()
-            remaining_questions.append(len(quiz_data) - 1)
-            total_questions.clear()
-            total_questions.append(len(quiz_data))
-            self.remaining_questions.config(text=f'Remaining questions: {remaining_questions[0]}/{total_questions[0]}')
-            if len(current_question) != 0:
-                self.question_label.config(text=current_question[0])
-                self.total = 0
-                self.total += 1
-                update_score()
-            con = sqlite3.connect(DATABASE_URI)
-            cur = con.cursor()
-            cur.execute("""SELECT * from highest_score""")
-            high_score_list = cur.fetchall()
-            for score in high_score_list:
-                if score[0] == current_chapter[0]:
-                    highest_score.clear()
-                    highest_score.append(score[1])
+            if len(current_chapter) != 0:
+                self.answer_label.config(text="")
+                enable_finish_button()
+                remaining_questions.clear()
+                remaining_questions.append(len(quiz_data) - 1)
+                total_questions.clear()
+                total_questions.append(len(quiz_data))
+                self.remaining_questions.config(text=f'Remaining questions: {remaining_questions[0]}/{total_questions[0]}')
+                if len(current_question) != 0:
+                    self.question_label.config(text=current_question[0])
+                    self.total = 0
+                    self.total += 1
+                    update_score()
+                con = sqlite3.connect(DATABASE_URI)
+                cur = con.cursor()
+                cur.execute("""SELECT * from highest_score""")
+                high_score_list = cur.fetchall()
+                for score in high_score_list:
+                    if score[0] == current_chapter[0]:
+                        highest_score.clear()
+                        highest_score.append(score[1])
+                    else:
+                        highest_score.clear()
+                con.close()
+                if len(highest_score) != 0:
+                    self.highest_score.config(text=f'Highest Score: {highest_score[0]}')
                 else:
-                    highest_score.clear()
-            con.close()
-            if len(highest_score) != 0:
-                self.highest_score.config(text=f'Highest Score: {highest_score[0]}')
+                    self.highest_score.config(text=f'Highest Score: ')
             else:
-                self.highest_score.config(text=f'Highest Score: ')
+                messagebox.showwarning("warning", "Please Load quiz before Starting Quiz!")
 
         def update_answer():
             self.answer_label.config(text=current_question_answer[0])
@@ -206,8 +215,8 @@ class Question(ttk.Frame):
         self.start_quiz.grid(row=0, column=0, pady=(50, 0), padx=80, sticky="w")
         self.remaining_questions = ttk.Label(self, text=f'remaining questions: ', font=("Calibri", 15))
         self.remaining_questions.grid(row=0, column=1)
-        self.question_label = ttk.Label(self, text="", font=('Calibri', 30))
-        self.question_label.grid(row=1, column=0, padx=80, pady=80, columnspan=4, sticky="w")
+        self.question_label = ttk.Label(self, text="", font=('Calibri', 30), wraplength=1100)
+        self.question_label.grid(row=1, column=0, padx=80, pady=80, columnspan=5, sticky="w")
         self.answer_label = ttk.Label(self, text="", font=('calibri', 30), foreground='Green')
         self.answer_label.grid(row=2, column=0, columnspan=4, padx=80, sticky="w")
         self.answer_button = ttk.Button(self, text="Answer", command=update_answer)

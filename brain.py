@@ -133,6 +133,7 @@ def load_question(question_list):
     remaining_questions.clear()
     remaining_questions.append(len(quiz_data))
     first_question = random.choice(question_list)
+    current_q_a.clear()
     current_q_a.append(first_question)
     current_question.clear()
     current_question_answer.clear()
@@ -143,6 +144,8 @@ def load_question(question_list):
 # on clicking '/' button it flashes next question #
 def next_question():
     if len(quiz_data) != 0 and keep_question[0] == 'False':
+        print(current_q_a[0])
+        print(quiz_data)
         quiz_data.remove(current_q_a[0])
         remaining_questions.clear()
         remaining_questions.append(len(quiz_data) - 1)
