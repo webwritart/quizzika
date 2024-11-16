@@ -1,27 +1,44 @@
+import sys
 from tkinter.filedialog import askopenfile
 import sqlite3
 import random
-import sys
 import os
 
-
-def resource_path(relative_path):
-    try:
-        base_path = sys._MEIPASS
-    except Exception:
-        base_path = os.path.abspath(".")
-
-    return os.path.join(base_path, relative_path)
-
-
+keep_question = ['False']
 data = []
 all_chapters_data = []
 quiz_data = []
+total_questions = []
+remaining_questions = []
+current_category = []
+current_chapter = []
+current_q_a = []
 current_question = []
+highest_score = []
 current_question_answer = []
+user = os.getlogin()
+STORAGE_FOLDER = "C:/Program Files/Quizzika"
+DATABASE_URI = STORAGE_FOLDER + '/data.db'
+# DATABASE_URI = "F:/data.db"
+if not os.path.exists(STORAGE_FOLDER):
+    os.mkdir(STORAGE_FOLDER)
 
+
+# --------------------------------- APP OPERATIONS ---------------------------------------------- #
+
+def restart_program():
+    python = sys.executable
+    os.execl(python, python, * sys.argv)
 
 # --------------------------------- DATABASE OPERATIONS ----------------------------------------- #
+
+
+def add_highest_record(cur, title, highest_percentage):
+    sqlite_insert_with_param = """INSERT INTO 
+                                 highest_score (chapter, highest_percentage) 
+                                  VALUES (?, ?);"""
+    data_tuple = (title, highest_percentage)
+    cur.execute(sqlite_insert_with_param, data_tuple)
 
 
 def add_data_to_db_table(cur, category, title, question, answer):
@@ -32,8 +49,31 @@ def add_data_to_db_table(cur, category, title, question, answer):
     cur.execute(sqlite_insert_with_param, data_tuple)
 
 
-def delete_table():
-    pass
+# def delete_table():
+#     table_parameter = "{questions}"
+#     drop_table_sql = f"DROP TABLE {table_parameter};"
+#     get_tables_sql = "SELECT name FROM sqlite_schema WHERE type='table';"
+#
+#     def delete_all_tables(con):
+#         tables = get_tables(con)
+#         delete_tables(con, tables)
+#
+#     def get_tables(con):
+#         cur = con.cursor()
+#         cur.execute(get_tables_sql)
+#         tables = cur.fetchall()
+#         cur.close()
+#         return tables
+#
+#     def delete_tables(con, tables):
+#         cur = con.cursor()
+#         for table, in tables:
+#             sql = drop_table_sql.replace(table_parameter, table)
+#             cur.execute(sql)
+#         cur.close()
+#
+#         con = sqlite3.connect("data.db")
+#         delete_all_tables(con)
 
 
 # --------------------------------------- QUIZ -------------------------------------------------- #
@@ -41,7 +81,7 @@ def delete_table():
 # Loads chapters and categories to the Menu list section on left #
 def load_chapters():
     chapters = []
-    con = sqlite3.connect(resource_path("data.db"))
+    con = sqlite3.connect(DATABASE_URI)
     cur = con.cursor()
     cur.execute("""SELECT * from questions""")
     content = cur.fetchall()
@@ -51,14 +91,32 @@ def load_chapters():
         chapter_name = chapter[1]
         if chapter_name not in chapters:
             chapters.append(chapter_name)
-    cur.close()
+
+    con.close()
     return chapters
 
 
 # load quiz questions related to selected chapters #
 def fetch_chapter_questions(chapter):
+    current_chapter.clear()
+    current_chapter.append(chapter)
+    con = sqlite3.connect(DATABASE_URI)
+    cur = con.cursor()
+    cur.execute("""SELECT * from questions""")
+    content = cur.fetchall()
+    keep_searching = True
+    if keep_searching:
+        for ch in content:
+            if ch[1] == chapter:
+                keep_searching = False
+                category = ch[0]
+                current_category.clear()
+                current_category.append(category)
+
+    con.close()
+
     quiz_data.clear()
-    chapter_name = chapter.get()
+    chapter_name = chapter
     if chapter_name != "Select Chapter":
         for item in all_chapters_data:
             if chapter_name == item[1]:
@@ -66,27 +124,42 @@ def fetch_chapter_questions(chapter):
                 a = item[3]
                 q_a_set = (q, a)
                 quiz_data.append(q_a_set)
-        start_quiz(quiz_data)
+        load_question(quiz_data)
 
 
 # starts quiz by flashing first question on clicking quiz start button #
-def start_quiz(question_list):
+def load_question(question_list):
     global current_question, current_question_answer
+    remaining_questions.clear()
+    remaining_questions.append(len(quiz_data))
     first_question = random.choice(question_list)
+    current_q_a.append(first_question)
+    current_question.clear()
+    current_question_answer.clear()
     current_question.append(first_question[0])
     current_question_answer.append(first_question[1])
 
 
 # on clicking '/' button it flashes next question #
 def next_question():
+    if len(quiz_data) != 0 and keep_question[0] == 'False':
+        quiz_data.remove(current_q_a[0])
+        remaining_questions.clear()
+        remaining_questions.append(len(quiz_data) - 1)
     current_question.clear()
     current_question_answer.clear()
-    q_a = random.choice(quiz_data)
-    next_q = q_a[0]
-    next_a = q_a[1]
-    current_question.append(next_q)
-    current_question_answer.append(next_a)
-
+    current_q_a.clear()
+    keep_question.clear()
+    keep_question.append('False')
+    if len(quiz_data) != 0:
+        q_a = random.choice(quiz_data)
+        current_q_a.append(q_a)
+        next_q = q_a[0]
+        next_a = q_a[1]
+        current_question.append(next_q)
+        current_question_answer.append(next_a)
+    else:
+        return "end"
 
 # ------------------------------------ ADD CHAPTER ---------------------------------------------- #
 
@@ -102,9 +175,8 @@ def process_content():
 def save_chapter(category, title):
     category = category.get()
     title = title.get()
-    con = sqlite3.connect(resource_path("data.db"))
+    con = sqlite3.connect(DATABASE_URI)
     cur = con.cursor()
-    print(data)
     for i in data:
         if i != '':
             q = i.split(";")[0]
@@ -120,5 +192,4 @@ def save_chapter(category, title):
             add_data_to_db_table(cur, category, title, q, a)
     con.commit()
     con.close()
-
 
