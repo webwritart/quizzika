@@ -16,10 +16,11 @@ current_q_a = []
 current_question = []
 highest_score = []
 current_question_answer = []
+last_three_questions = []
 user = os.getlogin()
 STORAGE_FOLDER = "C:/Program Files/Quizzika"
-DATABASE_URI = STORAGE_FOLDER + '/data.db'
-# DATABASE_URI = "F:/data.db"
+# DATABASE_URI = STORAGE_FOLDER + '/data.db'
+DATABASE_URI = "F:/data.db"
 if not os.path.exists(STORAGE_FOLDER):
     os.mkdir(STORAGE_FOLDER)
 
@@ -39,6 +40,7 @@ def add_highest_record(cur, title, highest_percentage):
                                   VALUES (?, ?);"""
     data_tuple = (title, highest_percentage)
     cur.execute(sqlite_insert_with_param, data_tuple)
+    print('Updated New highest score record to the database')
 
 
 def add_data_to_db_table(cur, category, title, question, answer):
@@ -47,6 +49,7 @@ def add_data_to_db_table(cur, category, title, question, answer):
                               VALUES (?, ?, ?, ?);"""
     data_tuple = (category, title, question, answer)
     cur.execute(sqlite_insert_with_param, data_tuple)
+    print('Added new Chapter to the Database')
 
 
 # def delete_table():
@@ -93,6 +96,7 @@ def load_chapters():
             chapters.append(chapter_name)
 
     con.close()
+    print('Chapters loaded to the section Menu!')
     return chapters
 
 
@@ -127,6 +131,7 @@ def fetch_chapter_questions(chapter):
                 q_a_set = (q, a)
                 quiz_data.append(q_a_set)
         load_question(quiz_data)
+    print('Quiz Data loaded successfully!')
 
 
 # starts quiz by flashing first question on clicking quiz start button #
@@ -144,17 +149,28 @@ def load_question(question_list):
 
     # Update the current chapter's highest score #
     highest_score.clear()
-
+    print('Questions for the current quiz loaded successfully!')
 
 
 # on clicking '/' button it flashes next question #
 def next_question():
     if len(quiz_data) != 0 and keep_question[0] == 'False':
-        print(current_q_a[0])
-        print(quiz_data)
+        # print(current_q_a[0])
+        # print(quiz_data)
         quiz_data.remove(current_q_a[0])
         remaining_questions.clear()
         remaining_questions.append(len(quiz_data) - 1)
+
+    # Adding current questions to the recent questions list to help avoiding question repeat too quickly #
+    if keep_question[0] == 'True':
+        if remaining_questions[0] > 3:
+            last_three_questions.append(current_question[0])
+        else:
+            last_three_questions.clear()
+        if len(last_three_questions) > 3:
+            del last_three_questions[0]
+        print('Last wrong question stored in "quiz data" as well as "Recent questions"')
+
     current_question.clear()
     current_question_answer.clear()
     current_q_a.clear()
@@ -162,6 +178,15 @@ def next_question():
     keep_question.append('False')
     if len(quiz_data) != 0:
         q_a = random.choice(quiz_data)
+
+        keep_matching = True
+        while keep_matching:
+            if q_a[0] in last_three_questions:
+                print(q_a)
+                q_a = random.choice(quiz_data)
+                keep_matching = True
+            else:
+                keep_matching = False
         current_q_a.append(q_a)
         next_q = q_a[0]
         next_a = q_a[1]
@@ -169,6 +194,8 @@ def next_question():
         current_question_answer.append(next_a)
     else:
         return "end"
+
+    print('Next question loaded successfully!')
 
 # ------------------------------------ ADD CHAPTER ---------------------------------------------- #
 
