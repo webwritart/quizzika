@@ -101,6 +101,8 @@ def fetch_chapter_questions(chapter):
     current_chapter.clear()
     current_chapter.append(chapter)
     con = sqlite3.connect(DATABASE_URI)
+
+    # Fetch questions from the database for the current selected chapter #
     cur = con.cursor()
     cur.execute("""SELECT * from questions""")
     content = cur.fetchall()
@@ -139,6 +141,10 @@ def load_question(question_list):
     current_question_answer.clear()
     current_question.append(first_question[0])
     current_question_answer.append(first_question[1])
+
+    # Update the current chapter's highest score #
+    highest_score.clear()
+
 
 
 # on clicking '/' button it flashes next question #

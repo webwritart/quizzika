@@ -115,8 +115,6 @@ class Question(ttk.Frame):
                     if score[0] == current_chapter[0]:
                         highest_score.clear()
                         highest_score.append(score[1])
-                    else:
-                        highest_score.clear()
                 con.close()
                 if len(highest_score) != 0:
                     self.highest_score.config(text=f'Highest Score: {highest_score[0]}')
