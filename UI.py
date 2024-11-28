@@ -94,6 +94,7 @@ class Question(ttk.Frame):
 
         def start_quiz():
             if len(current_chapter) != 0:
+
                 self.answer_label.config(text="")
                 enable_finish_button()
                 remaining_questions.clear()
