@@ -19,8 +19,8 @@ current_question_answer = []
 last_three_questions = []
 user = os.getlogin()
 STORAGE_FOLDER = "C:/Program Files/Quizzika"
-# DATABASE_URI = STORAGE_FOLDER + '/data.db'
-DATABASE_URI = "F:/data.db"
+DATABASE_URI = STORAGE_FOLDER + '/data.db'
+# DATABASE_URI = "F:/data.db"
 if not os.path.exists(STORAGE_FOLDER):
     os.mkdir(STORAGE_FOLDER)
 
