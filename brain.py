@@ -89,9 +89,9 @@ def load_chapters():
     cur.execute("""SELECT * from questions""")
     content = cur.fetchall()
 
-    for chapter in content:
-        all_chapters_data.append(chapter)
-        chapter_name = chapter[1]
+    for question in content:
+        all_chapters_data.append(question)
+        chapter_name = question[1]
         if chapter_name not in chapters:
             chapters.append(chapter_name)
 
@@ -101,7 +101,7 @@ def load_chapters():
 
 
 # load quiz questions related to selected chapters #
-def fetch_chapter_questions(chapter):
+def fetch_chapter_questions(chapter, order):
     current_chapter.clear()
     current_chapter.append(chapter)
     con = sqlite3.connect(DATABASE_URI)
@@ -124,13 +124,22 @@ def fetch_chapter_questions(chapter):
     quiz_data.clear()
     chapter_name = chapter
     if chapter_name != "Select Chapter":
-        for item in all_chapters_data:
-            if chapter_name == item[1]:
-                q = item[2]
-                a = item[3]
-                q_a_set = (q, a)
-                quiz_data.append(q_a_set)
-        load_question(quiz_data)
+        if order == "Reversed":
+            for item in all_chapters_data:
+                if chapter_name == item[1]:
+                    q = item[3]
+                    a = item[2]
+                    q_a_set = (q, a)
+                    quiz_data.append(q_a_set)
+            load_question(quiz_data)
+        else:
+            for item in all_chapters_data:
+                if chapter_name == item[1]:
+                    q = item[2]
+                    a = item[3]
+                    q_a_set = (q, a)
+                    quiz_data.append(q_a_set)
+            load_question(quiz_data)
     print('Quiz Data loaded successfully!')
 
 
@@ -209,23 +218,41 @@ def process_content():
 
 
 def save_chapter(category, title):
+    all_questions = []
     category = category.get()
     title = title.get()
     con = sqlite3.connect(DATABASE_URI)
     cur = con.cursor()
+    cur.execute("""SELECT * from questions""")
+    content = cur.fetchall()
+
+    for question in content:
+        all_questions.append(question[2])
+
     for i in data:
+
         if i != '':
-            q = i.split(";")[0]
-            a = i.split(";")[1]
-            if q[0] == ' ':
-                q = q.strip(q[0])
-            if q[-1] == ' ':
-                q = q.strip(q[-1])
-            if a[0] == ' ':
-                a = a.strip(a[0])
-            if a[-1] == ' ':
-                a = a.strip(a[-1])
-            add_data_to_db_table(cur, category, title, q, a)
+            try:
+                q = i.split(";")[0]
+                a = i.split(";")[1]
+                if q[0] == ' ':
+                    q = q.strip(q[0])
+                if q[-1] == ' ':
+                    q = q.strip(q[-1])
+                if a[0] == ' ':
+                    a = a.strip(a[0])
+                if a[-1] == ' ':
+                    a = a.strip(a[-1])
+
+                if category == 'LAW' or category == 'Law':
+                    add_data_to_db_table(cur, category, title, q, a)
+                else:
+                    if q not in all_questions:
+                        add_data_to_db_table(cur, category, title, q, a)
+                    else:
+                        print('Already Exists!')
+            except Exception as exception:
+                print(i)
     con.commit()
     con.close()
 

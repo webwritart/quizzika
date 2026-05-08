@@ -2,6 +2,9 @@ import sqlite3
 import tkinter as tk
 from tkinter import ttk, messagebox
 from tkinter import *
+import threading
+# from gevent.testing.travis import command
+
 from brain import *
 import sys
 
@@ -31,6 +34,7 @@ class App(tk.Tk):
 
         self.setting = Setting(self)
 
+
         self.mainloop()
 
 
@@ -54,12 +58,18 @@ class Menu(ttk.Frame):
         options = load_chapters()
         options.insert(0, "Select Chapter")
 
+        order_options = ["Regular", "Reversed"]
+        order_options.insert(0, "Regular")
+
         clicked = StringVar()
+        order = StringVar()
 
         self.chapters = ttk.OptionMenu(self, clicked, *options)
         self.chapters.grid(row=0, column=0, padx=(50, 0), pady=10)
-        self.load_quiz = ttk.Button(self, text="Load quiz", command=lambda: fetch_chapter_questions(clicked.get()))
-        self.load_quiz.grid(row=1, column=0, columnspan=2, padx=(50, 0), pady=10, sticky='w')
+        self.order = ttk.OptionMenu(self, order, *order_options)
+        self.order.grid(row=1, column=0, padx=(50, 0), pady=10)
+        self.load_quiz = ttk.Button(self, text="Load quiz", command=lambda: fetch_chapter_questions(clicked.get(), order.get()))
+        self.load_quiz.grid(row=2, column=0, columnspan=2, padx=(50, 0), pady=10, sticky='w')
 
 
 class Question(ttk.Frame):
@@ -70,6 +80,8 @@ class Question(ttk.Frame):
 
         self.score = 0
         self.total = 0
+
+
 
         def disable_mark_wrong_button():
             self.mark_wrong.config(state=tk.DISABLED)
@@ -120,6 +132,8 @@ class Question(ttk.Frame):
                     self.highest_score.config(text=f'Highest Score: {highest_score[0]}')
                 else:
                     self.highest_score.config(text=f'Highest Score: ')
+                reset_score()
+                enable_mark_wrong_button()
             else:
                 messagebox.showwarning("warning", "Please Load quiz before Starting Quiz!")
 
@@ -142,6 +156,9 @@ class Question(ttk.Frame):
 
             enable_mark_wrong_button()
 
+        def start_next_thread():
+            threading.Thread(target=next_q_a, daemon=True).start()
+
         def mark_wrong():
             self.score -= 1
             keep_question.clear()
@@ -149,44 +166,71 @@ class Question(ttk.Frame):
             disable_mark_wrong_button()
 
         def finish():
-            self.score += 1
+            if next_question() == "end":
+                self.score += 1
+
             score_percentage = (self.score/self.total)*100
             self.question_label.config(text=f'Congrats! You have scored {self.score} out of {self.total} | '
                                             f'Percentage: {score_percentage}')
             self.answer_label.config(text='')
 
             percentage = (self.score/self.total) * 100
+            if next_question() == "end":
+                con = sqlite3.connect(DATABASE_URI)
+                cur = con.cursor()
+                cur.execute("CREATE TABLE IF NOT EXISTS highest_score(chapter, highest_percentage)")
+                cur.execute("""SELECT * from highest_score""")
+                record = cur.fetchall()
 
+                # if no previous record then create a new one
+                if len(record) == 0:
+                    add_highest_record(cur, current_chapter[0], percentage)
+                else:
+                    current_chapter_record_box = []
+                    # else search for previous record for the chapter if any, compare the score to the current,
+                    # update if higher,
+                    for r in record:
+                        if r[0] == current_chapter[0]:
+                            current_chapter_record_box.clear()
+                            current_chapter_record_box.append(r)
+                            current_record = r[1]
+                            if percentage > current_record:
+                                self.question_label.config(
+                                    text=f'Congrats! Record Made! {self.score} out of {self.total} : {percentage}')
+                                delete_query = "DELETE FROM highest_score where chapter=?"
+                                cur.execute(delete_query, (current_chapter[0],))
+                                add_highest_record(cur, current_chapter[0], percentage)
+                    # if no record of current chapter found then create a fresh one.
+                    if len(current_chapter_record_box) == 0:
+                        add_highest_record(cur, current_chapter[0], percentage)
+
+                con.commit()
+                con.close()
+                con = sqlite3.connect(DATABASE_URI)
+                cur = con.cursor()
+                cur.execute("""SELECT * from highest_score""")
+                highest_score_list = cur.fetchall()
+                for score in highest_score_list:
+                    if score[0] == current_chapter[0]:
+                        highest_score.clear()
+                        highest_score.append(score[1])
+                self.highest_score.config(text=f'Highest Score: {highest_score[0]}')
+
+                con.close()
+            reset_score()
+            disable_finish_button()
+
+        def reset_high_score():
             con = sqlite3.connect(DATABASE_URI)
             cur = con.cursor()
-            cur.execute("CREATE TABLE IF NOT EXISTS highest_score(chapter, highest_percentage)")
-            cur.execute("""SELECT * from highest_score""")
-            record = cur.fetchall()
-
-            # if no previous record then create a new one
-            if len(record) == 0:
-                add_highest_record(cur, current_chapter[0], percentage)
-            else:
-                current_chapter_record_box = []
-                # else search for previous record for the chapter if any, compare the score to the current,
-                # update if higher,
-                for r in record:
-                    if r[0] == current_chapter[0]:
-                        current_chapter_record_box.clear()
-                        current_chapter_record_box.append(r)
-                        current_record = r[1]
-                        if percentage > current_record:
-                            self.question_label.config(
-                                text=f'Congrats! Record Made! {self.score} out of {self.total}')
-                            delete_query = "DELETE FROM highest_score where chapter=?"
-                            cur.execute(delete_query, (current_chapter[0],))
-                            add_highest_record(cur, current_chapter[0], percentage)
-                # if no record of current chapter found then create a fresh one.
-                if len(current_chapter_record_box) == 0:
-                    add_highest_record(cur, current_chapter[0], percentage)
-
+            print("Connected to database successfully!")
+            print(current_chapter[0])
+            delete_query = "DELETE FROM highest_score where chapter=?"
+            cur.execute(delete_query, (current_chapter[0],))
+            add_highest_record(cur, current_chapter[0], 0)
             con.commit()
             con.close()
+
             con = sqlite3.connect(DATABASE_URI)
             cur = con.cursor()
             cur.execute("""SELECT * from highest_score""")
@@ -198,8 +242,6 @@ class Question(ttk.Frame):
             self.highest_score.config(text=f'Highest Score: {highest_score[0]}')
 
             con.close()
-            reset_score()
-            disable_finish_button()
 
         def reset_score():
             self.score = 0
@@ -220,7 +262,7 @@ class Question(ttk.Frame):
         self.answer_label.grid(row=2, column=0, columnspan=4, padx=80, sticky="w")
         self.answer_button = ttk.Button(self, text="Answer", command=update_answer)
         self.answer_button.grid(row=3, column=0, pady=50, padx=80, sticky="w")
-        self.next = ttk.Button(self, text="Next", command=next_q_a)
+        self.next = ttk.Button(self, text="Next", command=start_next_thread)
         self.next.grid(row=3, column=1, padx=80, sticky="w")
         self.mark_wrong = ttk.Button(self, text="Mark Wrong", command=mark_wrong)
         self.mark_wrong.grid(row=3, column=2, padx=80, pady=50, sticky="w")
@@ -228,6 +270,9 @@ class Question(ttk.Frame):
         self.finish.grid(row=3, column=3, padx=80, sticky="w")
         self.reset_score = ttk.Button(self, text="Reset Score", command=reset_score)
         self.reset_score.grid(row=4, column=0, padx=80, sticky="w")
+        self.reset_high_score = ttk.Button(self, text="Reset High Score", command=reset_high_score)
+        self.reset_high_score.grid(row=4, column=1, padx=80, pady=50, sticky="w")
+
 
 
 class Setting(ttk.Frame):
