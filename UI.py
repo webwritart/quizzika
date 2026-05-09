@@ -76,7 +76,7 @@ class Menu(ttk.Frame):
         self.delete_chapter = ttk.Label(self, text="Delete Chapter", font=('Calibri', 20))
         self.chapters_to_be_deleted = ttk.OptionMenu(self, to_delete_chapters, *options)
         self.delete = ttk.Button(self, text="Delete", command=lambda : delete_chapter(to_delete_chapters.get()))
-        self.delete_chapter.grid(rows=4, column=0, columnspan=4, sticky="w", padx=(50, 0), pady=(100, 10))
+        self.delete_chapter.grid(rows=4, column=0, columnspan=4, sticky="w", padx=(50, 0), pady=(500, 10))
         self.chapters_to_be_deleted.grid(rows=5, column=0, sticky="w", padx=(50, 0), pady=10)
         self.delete.grid(column=0, columnspan=2, padx=(50, 0), pady=10, sticky='w')
 
