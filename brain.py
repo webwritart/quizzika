@@ -143,6 +143,16 @@ def fetch_chapter_questions(chapter, order):
     print('Quiz Data loaded successfully!')
 
 
+def delete_chapter(chapter):
+    con = sqlite3.connect(DATABASE_URI)
+    cur = con.cursor()
+    delete_query = "DELETE FROM questions where chapter=?"
+    cur.execute(delete_query, (chapter,))
+    con.commit()
+    con.close()
+    print("The selected chapter DELETED successfully!")
+
+
 # starts quiz by flashing first question on clicking quiz start button #
 def load_question(question_list):
     global current_question, current_question_answer

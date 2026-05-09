@@ -53,7 +53,7 @@ class Menu(ttk.Frame):
     def __init__(self, parent):
         super().__init__(parent)
         self.config(relief="ridge")
-        self.place(x=0, rely=0.15, relwidth=0.25, relheight=0.85)
+        self.place(x=0, rely=0.15, relwidth=0.25, relheight=2.25)
 
         options = load_chapters()
         options.insert(0, "Select Chapter")
@@ -63,13 +63,23 @@ class Menu(ttk.Frame):
 
         clicked = StringVar()
         order = StringVar()
+        to_delete_chapters = StringVar()
 
+        self.select_chapter = ttk.Label(self, text="Select Chapter", font=('Calibri', 20))
+        self.select_chapter.grid(row=0, column=0, padx=(50, 0), pady=10, sticky='w')
         self.chapters = ttk.OptionMenu(self, clicked, *options)
-        self.chapters.grid(row=0, column=0, padx=(50, 0), pady=10)
+        self.chapters.grid(row=1, column=0, padx=(50, 0), pady=10, sticky='w')
         self.order = ttk.OptionMenu(self, order, *order_options)
-        self.order.grid(row=1, column=0, padx=(50, 0), pady=10)
+        self.order.grid(row=2, column=0, padx=(50, 0), pady=10, sticky='w')
         self.load_quiz = ttk.Button(self, text="Load quiz", command=lambda: fetch_chapter_questions(clicked.get(), order.get()))
-        self.load_quiz.grid(row=2, column=0, columnspan=2, padx=(50, 0), pady=10, sticky='w')
+        self.load_quiz.grid(row=3, column=0, columnspan=2, padx=(50, 0), pady=10, sticky='w')
+        self.delete_chapter = ttk.Label(self, text="Delete Chapter", font=('Calibri', 20))
+        self.chapters_to_be_deleted = ttk.OptionMenu(self, to_delete_chapters, *options)
+        self.delete = ttk.Button(self, text="Delete", command=lambda : delete_chapter(to_delete_chapters.get()))
+        self.delete_chapter.grid(rows=4, column=0, columnspan=4, sticky="w", padx=(50, 0), pady=(100, 10))
+        self.chapters_to_be_deleted.grid(rows=5, column=0, sticky="w", padx=(50, 0), pady=10)
+        self.delete.grid(column=0, columnspan=2, padx=(50, 0), pady=10, sticky='w')
+
 
 
 class Question(ttk.Frame):
@@ -293,6 +303,9 @@ class Setting(ttk.Frame):
         self.title = ttk.Entry(self, textvariable=self.title, font=("Calibri", 20))
         self.add = ttk.Button(self, text="Add Chapter", command=lambda: save_chapter(self.category, self.title),
                               width=150, padding=10)
+
+
+
         self.heading.grid(row=0, column=0, columnspan=2, padx=50, pady=0, sticky="w")
         self.file_upload.grid(row=1, column=0, columnspan=2, padx=70, pady=10, sticky="w")
         self.category_label.grid(row=2, column=0, padx=(70, 0), pady=10, sticky="w")
