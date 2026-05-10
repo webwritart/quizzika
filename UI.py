@@ -176,12 +176,9 @@ class Question(ttk.Frame):
             disable_mark_wrong_button()
 
         def finish():
-            if next_question() == "end":
-                self.score += 1
-
             score_percentage = (self.score/self.total)*100
             self.question_label.config(text=f'Congrats! You have scored {self.score} out of {self.total} | '
-                                            f'Percentage: {score_percentage}')
+                                            f'Percentage: {score_percentage}%')
             self.answer_label.config(text='')
 
             percentage = (self.score/self.total) * 100
@@ -206,7 +203,7 @@ class Question(ttk.Frame):
                             current_record = r[1]
                             if percentage > current_record:
                                 self.question_label.config(
-                                    text=f'Congrats! Record Made! {self.score} out of {self.total} : {percentage}')
+                                    text=f'Congrats! Record Made! {self.score} out of {self.total} : {percentage}%')
                                 delete_query = "DELETE FROM highest_score where chapter=?"
                                 cur.execute(delete_query, (current_chapter[0],))
                                 add_highest_record(cur, current_chapter[0], percentage)
